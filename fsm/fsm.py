@@ -25,6 +25,9 @@ class StateMachine:
             self.getActiveState().onExit(T, dt)
             return self.nextState != StateMachine.TERMINATE_MACHINE
 
+    def collectTelemetry(self):
+        return self.getActiveState().collectTelemetry()
+
     def activeStateName(self):
         return self.states[self.activeState].getName()
 
