@@ -12,7 +12,7 @@ class GrasshopperStatesEnum(IntEnum):
     Descending = 3
 
 
-class GHAwaitLiftoffState(AwaitLiftoffState):
+class CountdownState(AwaitLiftoffState):
     def __init__(self):
         super().__init__("AWAIT LIFTOFF", 3, GrasshopperStatesEnum.Powering)
 
@@ -29,7 +29,7 @@ class GHAwaitLiftoffState(AwaitLiftoffState):
         super().onExit(T, dt)
 
 
-class GHEndPoweringEvent(EventBase):
+class EndPoweringEvent(EventBase):
     def __init__(self):
         super().__init__("GHEndPoweringEvent")
         self.altitude = None
@@ -51,7 +51,7 @@ class GHEndPoweringEvent(EventBase):
 
 class PoweringState(StateBase):
     def __init__(self):
-        super().__init__("POWERING", [GHEndPoweringEvent()])
+        super().__init__("POWERING", [EndPoweringEvent()])
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -81,7 +81,7 @@ class DescendingState(StateBase):
 
 
 GrasshopperStates = {
-    GrasshopperStatesEnum.AwaitLiftoff: GHAwaitLiftoffState(),
+    GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
     GrasshopperStatesEnum.Powering: PoweringState(),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
