@@ -18,4 +18,7 @@ def throttleFromTwr(twr, mass, available_thrust, g):
     :param g:
     :return: throttle setting in [0, 1]
     """
-    return min(max(twr*mass*g/available_thrust, 0), 1)
+    if available_thrust > 0:
+        return min(max(twr*mass*g/available_thrust, 0), 1)
+    else:
+        return 1
