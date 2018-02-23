@@ -38,12 +38,19 @@ class LiftoffEvent(EventBase):
 
 
 class AtApoapsisEvent(EventBase):
-    def __init__(self, next_state_id, start_after_seconds=0, tolerance=0.01):
+    def __init__(self, next_state_id, start_after_seconds=0, target_apoapsis=0, tolerance=0.01):
         super().__init__("AtApoapsisEvent")
 
         self.next_state_id = next_state_id
         self.tolerance = tolerance
         self.start_after_seconds = start_after_seconds
+        self.target_apoapsis = target_apoapsis
+
+        if target_apoapsis > 0:
+            self.has_target = True
+        else:
+            self.has_target = False
+
         self.T0 = 0
 
         self.apoapsis = None
@@ -56,7 +63,12 @@ class AtApoapsisEvent(EventBase):
         self.apoapsis = VesselStreams.Orbit.apoapsisAltitudeStream()
 
     def check(self, T, dt):
-        if abs(self.apoapsis() - self.altitude())/self.apoapsis() < self.tolerance\
+        if self.has_target:
+            apo = self.target_apoapsis
+        else:
+            apo = self.apoapsis()
+
+        if abs(apo - self.altitude())/self.apoapsis() < self.tolerance\
                 and T > self.T0 + self.start_after_seconds:
             return self.next_state_id
 

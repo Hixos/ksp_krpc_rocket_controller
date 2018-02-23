@@ -38,7 +38,7 @@ class CountdownState(AwaitLiftoffState):
 
 class PoweringState(StateBase):
     def __init__(self, target_altitude):
-        super().__init__("POWERING", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 10)])
+        super().__init__("POWERING", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 3, target_altitude)])
         self.target_altitude = target_altitude
         self.pid = PIDController(30, 0, 0)
         self.pid.setSetpoint(1)
@@ -97,7 +97,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: PoweringState(1000),
+    GrasshopperStatesEnum.Powering: PoweringState(300),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 
