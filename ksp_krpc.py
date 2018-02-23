@@ -18,7 +18,6 @@ class Stream:
 
     def remove(self):
         self.open_instances -= 1
-        print("{} remaining instances: {}".format(self.name, self.open_instances))
         if self.open_instances == 0:
             self.krpc_stream.remove()
             del Stream.streams[self.name]
