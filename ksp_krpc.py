@@ -11,7 +11,15 @@ vessel = conn.space_center.active_vessel
 
 class VesselStreams:
     @staticmethod
-    def surfaceAltitudeStream(): return conn.add_stream(getattr, vessel.flight(), 'surface_altitude')
-
-    @staticmethod
     def boundingBoxStream(reference_frame): return conn.add_stream(vessel.bounding_box, vessel.surface_reference_frame)
+
+    class Flight:
+        @staticmethod
+        def surfaceAltitudeStream(): return conn.add_stream(getattr, vessel.flight(), 'surface_altitude')
+
+        @staticmethod
+        def meanAltitudeStream(): return conn.add_stream(getattr, vessel.flight(), 'mean_altitude')
+
+    class Orbit:
+        @staticmethod
+        def apoapsisAltitudeStream(self): return conn.add_stream(getattr, vessel.orbit, 'apoapsis_altitude')

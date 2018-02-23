@@ -45,7 +45,7 @@ class LandingEvent(EventBase):
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
-        self.altitude = VesselStreams.surfaceAltitudeStream()
+        self.altitude = VesselStreams.Flight.surfaceAltitudeStream()
         self.bounding_box = VesselStreams.boundingBoxStream(vessel.surface_reference_frame)
 
     def check(self, T, dt):
