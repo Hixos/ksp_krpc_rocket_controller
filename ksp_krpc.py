@@ -92,12 +92,12 @@ vessel = conn.space_center.active_vessel
 
 ut = SpaceCenterStreams.UTStream()
 physics_warp = SpaceCenterStreams.physicsWarpStream()
-rails_warp = SpaceCenterStreams.railsWarpStream()
+#rails_warp = SpaceCenterStreams.railsWarpStream()
 game_paused = KRPCStreams.gamePausedStream()
 
 
 def closeGlobalStreams():
     ut.remove()
     physics_warp.remove()
-    rails_warp.remove()
+    #rails_warp.remove()
     game_paused.remove()

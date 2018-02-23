@@ -28,8 +28,8 @@ while True:
             print("In-game discontinuity detected. Stopping script")
             break
 
-        # Don't control anything if the game is in On-Rails warp, or if delta-T is zero
-        if ksp_krpc.rails_warp() == 0 and game_dt > 0:
+        # Don't control anything if game_dt is zero
+        if game_dt > 0:
             if not machine.update(T, game_dt):
                 break
 
@@ -42,7 +42,7 @@ while True:
 
 ksp_krpc.closeGlobalStreams()
 
-print("Script ended")
+print("\nScript ended")
 if len(ksp_krpc.Stream.streams) > 0:
     print("\n\nUNCLOSED STREAMS:")
     for k in ksp_krpc.Stream.streams.keys():
