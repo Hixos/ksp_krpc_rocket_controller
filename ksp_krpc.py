@@ -75,19 +75,30 @@ class SpaceCenterStreams:
     def UTStream(): return Stream.getStream('space_center.ut', (getattr, conn.space_center, 'ut'))
 
     @staticmethod
-    def PhysicsWarpStream(): return Stream.getStream('space_center.physics_warp_factor',
+    def physicsWarpStream(): return Stream.getStream('space_center.physics_warp_factor',
                                                      (getattr, conn.space_center, 'physics_warp_factor'))
 
     @staticmethod
-    def RailsWarpStream(): return Stream.getStream('space_center.rails_warp_factor',
+    def railsWarpStream(): return Stream.getStream('space_center.rails_warp_factor',
                                                    (getattr, conn.space_center, 'rails_warp_factor'))
 
 
+class KRPCStreams:
+    @staticmethod
+    def gamePausedStream(): return Stream.getStream('krpc.paused', (getattr, conn.krpc, 'paused'))
+
 conn = krpc.connect(name="Rocket Controller")
 
+vessel = conn.space_center.active_vessel
 
 ut = SpaceCenterStreams.UTStream()
-physics_warp = SpaceCenterStreams.PhysicsWarpStream()
-rails_warp = SpaceCenterStreams.RailsWarpStream()
+physics_warp = SpaceCenterStreams.physicsWarpStream()
+rails_warp = SpaceCenterStreams.railsWarpStream()
+game_paused = KRPCStreams.gamePausedStream()
 
-vessel = conn.space_center.active_vessel
+
+def closeGlobalStreams():
+    ut.remove()
+    physics_warp.remove()
+    rails_warp.remove()
+    game_paused.remove()
