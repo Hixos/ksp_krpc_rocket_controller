@@ -40,4 +40,10 @@ while True:
     time.sleep(max(max(dt/(1+ksp_krpc.physics_warp()), 0.02) - end + start, 0))
 
 
+ksp_krpc.closeGlobalStreams()
+
 print("Script ended")
+if len(ksp_krpc.Stream.streams) > 0:
+    print("\n\nUNCLOSED STREAMS:")
+    for k in ksp_krpc.Stream.streams.keys():
+        print("{} - instances: {}".format(k, ksp_krpc.Stream.streams[k].open_instances))
