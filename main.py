@@ -2,7 +2,7 @@ import time
 import ksp_krpc
 from fsm.fsm import StateMachine
 from controllers.grasshopper import GrasshopperStates
-
+from telemetry.telemetry import update as updateTelemetry
 dt = 0.1
 game_dt = 0
 
@@ -13,9 +13,8 @@ last_T = 0
 # From universal game time to relative time from the start of the script
 def TfromUT(t_ut): return t_ut - T0
 
-
 time.sleep(dt)
-machine = StateMachine(GrasshopperStates, 0, 0)
+machine = StateMachine(GrasshopperStates)
 
 while True:
     start = time.time()
@@ -30,7 +29,9 @@ while True:
 
         # Don't control anything if game_dt is zero
         if game_dt > 0:
-            if not machine.update(T, game_dt):
+            go_on = machine.update(T, game_dt)
+            updateTelemetry(machine)
+            if not go_on:
                 break
 
         last_T = T
