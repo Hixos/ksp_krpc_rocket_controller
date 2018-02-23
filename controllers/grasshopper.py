@@ -21,7 +21,7 @@ class GrasshopperStatesEnum(IntEnum):
 
 class CountdownState(AwaitLiftoffState):
     def __init__(self):
-        super().__init__("AWAIT LIFTOFF", 3, GrasshopperStatesEnum.Powering)
+        super().__init__("AWAIT LIFTOFF", 300, GrasshopperStatesEnum.Powering)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)

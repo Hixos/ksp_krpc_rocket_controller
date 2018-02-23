@@ -1,44 +1,29 @@
 class StateMachine:
-    NO_EVENT = 0
+    NO_STATE = 0
     TERMINATE_MACHINE = -1
 
-    def __init__(self, states, T, dt):
+    def __init__(self, states):
         self.states = states
 
+        self.activeState = StateMachine.NO_STATE
+
         # Starting state is always the first of the list
-        self.activeState = 1
-        self.enteredActiveState = False
-        self.enterActiveState(T, dt)
+        self.nextState = 1
 
     def getActiveState(self):
         return self.states[self.activeState]
 
-    def enterActiveState(self, T, dt):
-        print("Entering state " + self.activeStateName())
-        self.getActiveState().onEntry(T, dt)
-        self.enteredActiveState = True
-
-    def exitActiveState(self, T, dt):
-        print("Exiting state " + self.activeStateName())
-        self.getActiveState().onExit(T, dt)
-
-    def transitionToState(self, T, dt, state):
-        self.exitActiveState(T, dt)
-        self.activeState = state
-        self.enteredActiveState = False
-
     def update(self, T, dt):
-        if not self.enteredActiveState:
-            self.enterActiveState(T, dt)
-        new_state = self.getActiveState().update(T, dt)
-        if new_state == self.TERMINATE_MACHINE:
-            self.exitActiveState(T, dt)
-            return False
-        elif new_state == self.NO_EVENT:
-            return True
-        elif new_state in self.states.keys():
-            self.transitionToState(T, dt, new_state)
-            return True
+        if self.nextState > StateMachine.NO_STATE:
+            self.activeState = self.nextState
+            self.nextState = StateMachine.NO_STATE
+            self.getActiveState().onEntry(T, dt)
+
+        self.nextState = self.getActiveState().update(T, dt)
+
+        if self.nextState != StateMachine.NO_STATE:
+            self.getActiveState().onExit(T, dt)
+            return self.nextState != StateMachine.TERMINATE_MACHINE
 
     def activeStateName(self):
         return self.states[self.activeState].getName()
@@ -55,7 +40,7 @@ class EventBase:
         pass
 
     def check(self, T, dt):
-        return StateMachine.NO_EVENT
+        return StateMachine.NO_STATE
 
     def onExit(self, T, dt):
         pass
@@ -79,10 +64,18 @@ class StateBase:
     def update(self, T, dt):
         for e in self.events:
             result = e.check(T, dt)
-            if result != StateMachine.NO_EVENT:
+            if result != StateMachine.NO_STATE:
                 return result
 
-        return StateMachine.NO_EVENT
+        return StateMachine.NO_STATE
+
+    def collectTelemetry(self):
+        """
+        Returns a tuple containing the state telemetry id and a dictionary containing telemetry
+        data for the last update.
+        :return: tuple (state_id, {data_id_1: value1, ..., data_id_N: valueN})
+        """
+        raise NotImplemented
 
     def onExit(self, T, dt):
         for e in self.events:

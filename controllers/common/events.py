@@ -12,7 +12,7 @@ class EmptyEvent(EventBase):
         super().onEntry(T, dt)
 
     def check(self, T, dt):
-        return StateMachine.NO_EVENT
+        return StateMachine.NO_STATE
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
@@ -34,7 +34,7 @@ class LiftoffEvent(EventBase):
         if T > self.T0:
             return self.next_state_id
         else:
-            return StateMachine.NO_EVENT
+            return StateMachine.NO_STATE
 
 
 class AtApoapsisEvent(EventBase):
@@ -72,7 +72,7 @@ class AtApoapsisEvent(EventBase):
                 and T > self.T0 + self.start_after_seconds:
             return self.next_state_id
 
-        return StateMachine.NO_EVENT
+        return StateMachine.NO_STATE
 
     def onExit(self, T, dt):
         self.altitude.remove()
@@ -95,7 +95,7 @@ class LandingEvent(EventBase):
         if lowest_altitude(self.altitude(), self.bounding_box()) <= 0:
             return self.next_state_id
 
-        return StateMachine.NO_EVENT
+        return StateMachine.NO_STATE
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
