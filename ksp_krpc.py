@@ -1,13 +1,5 @@
 import krpc
 
-conn = krpc.connect(name="Rocket Controller")
-
-ut = conn.add_stream(getattr, conn.space_center, 'ut')
-physics_warp = conn.add_stream(getattr, conn.space_center, 'physics_warp_factor')
-rails_warp = conn.add_stream(getattr, conn.space_center, 'rails_warp_factor')
-
-vessel = conn.space_center.active_vessel
-
 
 class Stream:
     """
@@ -78,6 +70,24 @@ class VesselStreams:
             def gravitationalParameter(): return vessel.orbit.body.gravitational_parameter
 
 
+class SpaceCenterStreams:
+    @staticmethod
+    def UTStream(): return Stream.getStream('space_center.ut', (getattr, conn.space_center, 'ut'))
+
+    @staticmethod
+    def PhysicsWarpStream(): return Stream.getStream('space_center.physics_warp_factor',
+                                                     (getattr, conn.space_center, 'physics_warp_factor'))
+
+    @staticmethod
+    def RailsWarpStream(): return Stream.getStream('space_center.rails_warp_factor',
+                                                   (getattr, conn.space_center, 'rails_warp_factor'))
 
 
+conn = krpc.connect(name="Rocket Controller")
 
+
+ut = SpaceCenterStreams.UTStream()
+physics_warp = SpaceCenterStreams.PhysicsWarpStream()
+rails_warp = SpaceCenterStreams.RailsWarpStream()
+
+vessel = conn.space_center.active_vessel
