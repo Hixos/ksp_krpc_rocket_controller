@@ -40,6 +40,3 @@ while True:
 
 
 print("Script ended")
-print("Please check that no unwanted streams remained open.")
-
-time.sleep(10)
