@@ -27,7 +27,7 @@ class PIDController:
         self.is_integral_limited = False
 
     def update(self, value, dt):
-        error = value - self.setpoint
+        error = self.setpoint - value
 
         self.integral += error * dt
 
