@@ -22,4 +22,4 @@ class VesselStreams:
 
     class Orbit:
         @staticmethod
-        def apoapsisAltitudeStream(self): return conn.add_stream(getattr, vessel.orbit, 'apoapsis_altitude')
+        def apoapsisAltitudeStream(): return conn.add_stream(getattr, vessel.orbit, 'apoapsis_altitude')

@@ -2,6 +2,7 @@ from fsm.fsm import StateMachine, EventBase
 from ksp_krpc import vessel, VesselStreams
 from utils.vessel_utils import lowest_altitude
 
+
 # Copy this when creating new events
 class EmptyEvent(EventBase):
     def __init__(self):
