@@ -2,7 +2,11 @@ from fsm.fsm import StateMachine, StateBase, EventBase
 from .common.states import AwaitLiftoffState
 from .common.events import LandingEvent
 from enum import IntEnum, unique
-from ksp_krpc import vessel, conn
+from ksp_krpc import vessel, conn, VesselStreams
+
+from utils.control.pid import PIDController
+from utils.vessel_utils import throttleFromTwr
+from utils.physiscs_utils import gravitationalAcceleration
 
 
 @unique
@@ -30,17 +34,18 @@ class CountdownState(AwaitLiftoffState):
 
 
 class EndPoweringEvent(EventBase):
-    def __init__(self):
+    def __init__(self, target_altitude, tolerance=0.05):
         super().__init__("GHEndPoweringEvent")
+        self.target_altitude = target_altitude
+        self.tolerance = tolerance
+
         self.altitude = None
-        self.starting_alt = 0
 
     def onEntry(self, T, dt):
-        self.altitude = conn.add_stream(getattr, vessel.flight(), 'surface_altitude')
-        self.starting_alt = self.altitude()
+        self.altitude = VesselStreams.Flight.meanAltitudeStream()
 
     def check(self, T, dt):
-        if self.altitude() - self.starting_alt > 5:
+        if abs(self.altitude() - self.target_altitude)/self.target_altitude < self.tolerance:
             return GrasshopperStatesEnum.Descending
 
         return StateMachine.NO_EVENT
@@ -50,20 +55,48 @@ class EndPoweringEvent(EventBase):
 
 
 class PoweringState(StateBase):
-    def __init__(self):
-        super().__init__("POWERING", [EndPoweringEvent()])
+    def __init__(self, target_altitude):
+        super().__init__("POWERING", [EndPoweringEvent(target_altitude)])
+        self.target_altitude = target_altitude
+        self.pid = PIDController(30, 0, 0)
+        self.pid.setSetpoint(1)
+
+        self.altitude = None
+        self.mass = None
+        self.orbit_radius = None
+        self.available_thrust = None
+
+        self.GM = VesselStreams.Orbit.CelestialBody.gravitationalParameter()
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
-        vessel.control.throttle = 1
+        self.altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
+        self.mass = VesselStreams.mass()
+        self.orbit_radius = VesselStreams.Orbit.radiusStream()
+        self.available_thrust = VesselStreams.availableThrust()
+
+        # Activate engines
         vessel.control.activate_next_stage()
 
     def update(self, T, dt):
+        target_twr = self.pid.update(self.altitude()/self.target_altitude, dt)
+
+        g = gravitationalAcceleration(self.GM, self.orbit_radius())
+        throttle = throttleFromTwr(target_twr, self.mass(), self.available_thrust(), g)
+
+        vessel.control.throttle = throttle
+
         return super().update(T, dt)
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
         vessel.control.throttle = 0
+
+        # Close streams
+        self.altitude.remove()
+        self.mass.remove()
+        self.orbit_radius.remove()
+        self.available_thrust.remove()
 
 
 class DescendingState(StateBase):
@@ -82,7 +115,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: PoweringState(),
+    GrasshopperStatesEnum.Powering: PoweringState(20000),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 
