@@ -1,12 +1,16 @@
 import time
-import ksp_krpc
+
+from global_streams import global_streams
 from fsm.fsm import StateMachine
-from controllers.grasshopper import GrasshopperStates
+
 from telemetry.telemetry import update as updateTelemetry
+
+from controllers.grasshopper import GrasshopperStates
+
 dt = 0.1
 game_dt = 0
 
-T0 = ksp_krpc.ut()
+T0 = global_streams.ut()
 last_T = 0
 
 
@@ -18,8 +22,8 @@ machine = StateMachine(GrasshopperStates)
 
 while True:
     start = time.time()
-    if not ksp_krpc.game_paused():  # If game is paused, pause too
-        T = TfromUT(ksp_krpc.ut())  # Game time elapsed from start of the program
+    if not global_streams.game_paused():  # If game is paused, pause too
+        T = TfromUT(global_streams.ut())  # Game time elapsed from start of the program
         game_dt = T - last_T
 
         # Flight reverted, quicksave loaded or other invalidating actions. Stop the script.
@@ -38,13 +42,13 @@ while True:
     end = time.time()
 
     # Sleep for the remaining time in the slot
-    time.sleep(max(max(dt/(1+ksp_krpc.physics_warp()), 0.02) - end + start, 0))
+    time.sleep(max(max(dt/(1+global_streams.physics_warp()), 0.02) - end + start, 0))
 
 
-ksp_krpc.closeGlobalStreams()
+global_streams.global_streams.closeStreams()
 
 print("\nScript ended")
-if len(ksp_krpc.Stream.streams) > 0:
+if len(global_streams.Stream.streams) > 0:
     print("\n\nUNCLOSED STREAMS:")
-    for k in ksp_krpc.Stream.streams.keys():
-        print("{} - instances: {}".format(k, ksp_krpc.Stream.streams[k].open_instances))
+    for k in global_streams.Stream.streams.keys():
+        print("{} - instances: {}".format(k, global_streams.Stream.streams[k].open_instances))

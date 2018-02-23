@@ -1,5 +1,8 @@
 import krpc
 
+conn = krpc.connect(name="Rocket Controller")
+vessel = conn.space_center.active_vessel
+
 
 class Stream:
     """
@@ -85,19 +88,3 @@ class SpaceCenterStreams:
 class KRPCStreams:
     @staticmethod
     def gamePausedStream(): return Stream.getStream('krpc.paused', (getattr, conn.krpc, 'paused'))
-
-conn = krpc.connect(name="Rocket Controller")
-
-vessel = conn.space_center.active_vessel
-
-ut = SpaceCenterStreams.UTStream()
-physics_warp = SpaceCenterStreams.physicsWarpStream()
-#rails_warp = SpaceCenterStreams.railsWarpStream()
-game_paused = KRPCStreams.gamePausedStream()
-
-
-def closeGlobalStreams():
-    ut.remove()
-    physics_warp.remove()
-    #rails_warp.remove()
-    game_paused.remove()
