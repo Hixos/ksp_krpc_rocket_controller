@@ -37,6 +37,36 @@ class LiftoffEvent(EventBase):
             return StateMachine.NO_EVENT
 
 
+class AtApoapsisEvent(EventBase):
+    def __init__(self, next_state_id, start_after_seconds=0, tolerance=0.01):
+        super().__init__("AtApoapsisEvent")
+
+        self.next_state_id = next_state_id
+        self.tolerance = tolerance
+        self.start_after_seconds = start_after_seconds
+        self.T0 = 0
+
+        self.apoapsis = None
+        self.altitude = None
+
+    def onEntry(self, T, dt):
+        self.T0 = T
+
+        self.altitude = VesselStreams.Flight.meanAltitudeStream()
+        self.apoapsis = VesselStreams.Orbit.apoapsisAltitudeStream()
+
+    def check(self, T, dt):
+        if abs(self.apoapsis() - self.altitude())/self.apoapsis() < self.tolerance\
+                and T > self.T0 + self.start_after_seconds:
+            return self.next_state_id
+
+        return StateMachine.NO_EVENT
+
+    def onExit(self, T, dt):
+        self.altitude.remove()
+        self.apoapsis.remove()
+
+
 class LandingEvent(EventBase):
     def __init__(self, next_state_id):
         super().__init__("EMPTY EVENT")

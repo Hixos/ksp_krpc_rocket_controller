@@ -1,8 +1,11 @@
+from ksp_krpc import vessel, VesselStreams
+
 from fsm.fsm import StateMachine, StateBase, EventBase
-from .common.states import AwaitLiftoffState
-from .common.events import LandingEvent
+
 from enum import IntEnum, unique
-from ksp_krpc import vessel, conn, VesselStreams
+
+from .common.states import AwaitLiftoffState
+from .common.events import LandingEvent, AtApoapsisEvent
 
 from utils.control.pid import PIDController
 from utils.vessel_utils import throttleFromTwr
@@ -33,30 +36,30 @@ class CountdownState(AwaitLiftoffState):
         super().onExit(T, dt)
 
 
-class EndPoweringEvent(EventBase):
-    def __init__(self, target_altitude, tolerance=0.05):
-        super().__init__("GHEndPoweringEvent")
-        self.target_altitude = target_altitude
-        self.tolerance = tolerance
-
-        self.altitude = None
-
-    def onEntry(self, T, dt):
-        self.altitude = VesselStreams.Flight.meanAltitudeStream()
-
-    def check(self, T, dt):
-        if abs(self.altitude() - self.target_altitude)/self.target_altitude < self.tolerance:
-            return GrasshopperStatesEnum.Descending
-
-        return StateMachine.NO_EVENT
-
-    def onExit(self, T, dt):
-        self.altitude.remove()
+# class EndPoweringEvent(EventBase):
+#     def __init__(self, target_altitude, tolerance=0.05):
+#         super().__init__("GHEndPoweringEvent")
+#         self.target_altitude = target_altitude
+#         self.tolerance = tolerance
+#
+#         self.altitude = None
+#
+#     def onEntry(self, T, dt):
+#         self.altitude = VesselStreams.Flight.meanAltitudeStream()
+#
+#     def check(self, T, dt):
+#         if abs(self.altitude() - self.target_altitude)/self.target_altitude < self.tolerance:
+#             return GrasshopperStatesEnum.Descending
+#
+#         return StateMachine.NO_EVENT
+#
+#     def onExit(self, T, dt):
+#         self.altitude.remove()
 
 
 class PoweringState(StateBase):
     def __init__(self, target_altitude):
-        super().__init__("POWERING", [EndPoweringEvent(target_altitude)])
+        super().__init__("POWERING", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 10)])
         self.target_altitude = target_altitude
         self.pid = PIDController(30, 0, 0)
         self.pid.setSetpoint(1)
@@ -115,7 +118,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: PoweringState(20000),
+    GrasshopperStatesEnum.Powering: PoweringState(1000),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 
