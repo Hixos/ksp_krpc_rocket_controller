@@ -7,3 +7,15 @@ def lowest_altitude(surface_altitude, bounding_box):
     :return: Altitude in meters
     """
     return surface_altitude + bounding_box[0][0]
+
+
+def throttleFromTwr(twr, mass, available_thrust, g):
+    """
+    Returns the throttle setting to obtain the specified TWR
+    :param twr:
+    :param mass:
+    :param available_thrust:
+    :param g:
+    :return: throttle setting in [0, 1]
+    """
+    return min(max(twr*mass*g/available_thrust, 0), 1)
