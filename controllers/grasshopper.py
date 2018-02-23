@@ -36,27 +36,6 @@ class CountdownState(AwaitLiftoffState):
         super().onExit(T, dt)
 
 
-# class EndPoweringEvent(EventBase):
-#     def __init__(self, target_altitude, tolerance=0.05):
-#         super().__init__("GHEndPoweringEvent")
-#         self.target_altitude = target_altitude
-#         self.tolerance = tolerance
-#
-#         self.altitude = None
-#
-#     def onEntry(self, T, dt):
-#         self.altitude = VesselStreams.Flight.meanAltitudeStream()
-#
-#     def check(self, T, dt):
-#         if abs(self.altitude() - self.target_altitude)/self.target_altitude < self.tolerance:
-#             return GrasshopperStatesEnum.Descending
-#
-#         return StateMachine.NO_EVENT
-#
-#     def onExit(self, T, dt):
-#         self.altitude.remove()
-
-
 class PoweringState(StateBase):
     def __init__(self, target_altitude):
         super().__init__("POWERING", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 10)])
