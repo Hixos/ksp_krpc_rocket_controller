@@ -13,20 +13,32 @@ class StateMachine:
     def getActiveState(self):
         return self.states[self.activeState]
 
+    def enterActiveState(self, T, dt):
+        self.getActiveState().onEntry(T, dt)
+        print("{} on Entry".format(self.getActiveState().getName()))
+
+    def exitActiveState(self, T, dt):
+        print("{} on Exit".format(self.getActiveState().getName()))
+        self.getActiveState().onExit(T, dt)
+
     def update(self, T, dt):
         if self.nextState > StateMachine.NO_STATE:
+            if self.activeState > StateMachine.NO_STATE:
+                self.exitActiveState(T, dt)
+
             self.activeState = self.nextState
             self.nextState = StateMachine.NO_STATE
-            self.getActiveState().onEntry(T, dt)
+            self.enterActiveState(T, dt)
 
         self.nextState = self.getActiveState().update(T, dt)
 
-        if self.nextState != StateMachine.NO_STATE:
-            self.getActiveState().onExit(T, dt)
-            return self.nextState != StateMachine.TERMINATE_MACHINE
+        return self.nextState != StateMachine.TERMINATE_MACHINE
 
     def collectTelemetry(self):
         return self.getActiveState().collectTelemetry()
+
+    def terminate(self, T, dt):
+        self.getActiveState().onExit(T, dt)
 
     def activeStateName(self):
         return self.states[self.activeState].getName()

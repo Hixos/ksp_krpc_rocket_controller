@@ -22,15 +22,21 @@ def addGroup(group):
     telemetry_unit[group[0]] = group[1]
 
 
-def update(state_machine):
-    collect(state_machine)
+def update(state_machine, T, dt):
+    # Reset telemetry
+    global telemetry_unit
+    telemetry_unit = {}
+
+    collect(state_machine, T, dt)
 
     print(telemetry_unit)
 
 
-def collect(state_machine: StateMachine):
+def collect(state_machine: StateMachine, T ,dt):
     basic = GroupBuilder('basic')
     basic.addData('ut', global_streams.ut())
+    basic.addData('T', T)
+    basic.addData('dt', dt)
 
     addGroup(basic.build())
     addGroup(state_machine.collectTelemetry())

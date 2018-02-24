@@ -17,7 +17,8 @@ class GlobalStreams:
         if item in self.streams:
             return self.streams[item]
         else:
-            raise AttributeError
+            exc_msg = "No attribute called '".format(item)
+            raise AttributeError(exc_msg)
 
 
 global_streams = GlobalStreams()

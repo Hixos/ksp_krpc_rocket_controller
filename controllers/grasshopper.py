@@ -1,6 +1,6 @@
 from ksp_krpc import vessel, VesselStreams
-
 from fsm.fsm import StateMachine, StateBase, EventBase
+from telemetry.telemetry import GroupBuilder
 
 from enum import IntEnum, unique
 
@@ -21,7 +21,7 @@ class GrasshopperStatesEnum(IntEnum):
 
 class CountdownState(AwaitLiftoffState):
     def __init__(self):
-        super().__init__("AWAIT LIFTOFF", 300, GrasshopperStatesEnum.Powering)
+        super().__init__("AWAIT LIFTOFF", 3, GrasshopperStatesEnum.Powering)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -31,6 +31,10 @@ class CountdownState(AwaitLiftoffState):
 
     def update(self, T, dt):
         return super().update(T, dt)
+
+    def collectTelemetry(self):
+        group = GroupBuilder("cd_state")
+        return group.build()
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
@@ -74,6 +78,12 @@ class PoweringState(StateBase):
 
         return super().update(T, dt)
 
+    def collectTelemetry(self):
+        group = GroupBuilder("powering_state")
+        group.addData('target', self.target_altitude)
+        group.addData('apo_altitude', self.apo_altitude())
+        return group.build()
+
     def onExit(self, T, dt):
         super().onExit(T, dt)
         vessel.control.throttle = 0
@@ -96,8 +106,12 @@ class DescendingState(StateBase):
         self.altitude = VesselStreams.Flight.surfaceAltitudeStream()
 
     def update(self, T, dt):
-
         return super().update(T, dt)
+
+    def collectTelemetry(self):
+        group = GroupBuilder("descent_state")
+        group.addData('altitude', self.altitude())
+        return group.build()
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
@@ -106,7 +120,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: PoweringState(100000),
+    GrasshopperStatesEnum.Powering: PoweringState(500),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 

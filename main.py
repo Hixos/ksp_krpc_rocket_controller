@@ -2,6 +2,7 @@ import time
 
 from global_streams import global_streams
 from fsm.fsm import StateMachine
+from ksp_krpc import Stream
 
 from telemetry.telemetry import update as updateTelemetry
 
@@ -11,6 +12,8 @@ dt = 0.1
 game_dt = 0
 
 T0 = global_streams.ut()
+
+print(T0)
 last_T = 0
 
 
@@ -34,8 +37,10 @@ while True:
         # Don't control anything if game_dt is zero
         if game_dt > 0:
             go_on = machine.update(T, game_dt)
-            updateTelemetry(machine)
+            updateTelemetry(machine, T, game_dt)
             if not go_on:
+                machine.terminate(T, game_dt)
+                print("State machine terminated")
                 break
 
         last_T = T
@@ -45,10 +50,10 @@ while True:
     time.sleep(max(max(dt/(1+global_streams.physics_warp()), 0.02) - end + start, 0))
 
 
-global_streams.global_streams.closeStreams()
+global_streams.closeStreams()
 
 print("\nScript ended")
-if len(global_streams.Stream.streams) > 0:
+if len(Stream.streams) > 0:
     print("\n\nUNCLOSED STREAMS:")
-    for k in global_streams.Stream.streams.keys():
-        print("{} - instances: {}".format(k, global_streams.Stream.streams[k].open_instances))
+    for k in Stream.streams.keys():
+        print("{} - instances: {}".format(k, Stream.streams[k].open_instances))
