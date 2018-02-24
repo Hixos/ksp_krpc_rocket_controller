@@ -1,44 +1,53 @@
-class StateMachine:
+from telemetry.telemetry import TelemetryProviderInterface, TelemetryBuilder, addProvider
+
+
+class StateMachine(TelemetryProviderInterface):
     NO_STATE = 0
     TERMINATE_MACHINE = -1
 
     def __init__(self, states):
         self.states = states
 
-        self.activeState = StateMachine.NO_STATE
-
         # Starting state is always the first of the list
-        self.nextState = 1
+        self.activeState = 1
+        self.entered_active_state = False
+
+        self.nextState = StateMachine.NO_STATE
 
     def getActiveState(self):
         return self.states[self.activeState]
 
     def enterActiveState(self, T, dt):
         self.getActiveState().onEntry(T, dt)
+        self.entered_active_state = True
         print("{} on Entry".format(self.getActiveState().getName()))
 
     def exitActiveState(self, T, dt):
-        print("{} on Exit".format(self.getActiveState().getName()))
         self.getActiveState().onExit(T, dt)
+        self.entered_active_state = False
+        print("{} on Exit".format(self.getActiveState().getName()))
 
     def update(self, T, dt):
         if self.nextState > StateMachine.NO_STATE:
-            if self.activeState > StateMachine.NO_STATE:
-                self.exitActiveState(T, dt)
-
+            self.exitActiveState(T, dt)
             self.activeState = self.nextState
             self.nextState = StateMachine.NO_STATE
+
+        if not self.entered_active_state:
             self.enterActiveState(T, dt)
 
         self.nextState = self.getActiveState().update(T, dt)
 
         return self.nextState != StateMachine.TERMINATE_MACHINE
 
-    def collectTelemetry(self):
-        return self.getActiveState().collectTelemetry()
+    def getProviderKey(self):
+        return "active_state"
+
+    def provideTelemetry(self):
+        return self.getActiveState().provideTelemetry()
 
     def terminate(self, T, dt):
-        self.getActiveState().onExit(T, dt)
+        self.exitActiveState(T, dt)
 
     def activeStateName(self):
         return self.states[self.activeState].getName()
@@ -61,9 +70,9 @@ class EventBase:
         pass
 
 
-class StateBase:
+class StateBase(TelemetryProviderInterface):
     def __init__(self, name, events=[]):
-        self.name = name
+        self.name = name + "_state"
         self.events = events
 
     def addEvent(self, event):
@@ -84,13 +93,12 @@ class StateBase:
 
         return StateMachine.NO_STATE
 
-    def collectTelemetry(self):
-        """
-        Returns a tuple containing the state telemetry id and a dictionary containing telemetry
-        data for the last update.
-        :return: tuple (state_id, {data_id_1: value1, ..., data_id_N: valueN})
-        """
-        raise NotImplemented
+    def getKey(self):
+        return self.getName()
+
+    def provideTelemetry(self):
+        # Return empty data as default
+        return TelemetryBuilder(self.getName()).build()
 
     def onExit(self, T, dt):
         for e in self.events:

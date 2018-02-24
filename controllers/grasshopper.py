@@ -1,6 +1,6 @@
 from ksp_krpc import vessel, VesselStreams
 from fsm.fsm import StateMachine, StateBase, EventBase
-from telemetry.telemetry import GroupBuilder
+from telemetry.telemetry import TelemetryBuilder
 
 from enum import IntEnum, unique
 
@@ -21,7 +21,7 @@ class GrasshopperStatesEnum(IntEnum):
 
 class CountdownState(AwaitLiftoffState):
     def __init__(self):
-        super().__init__("AWAIT LIFTOFF", 3, GrasshopperStatesEnum.Powering)
+        super().__init__("countdown", 3, GrasshopperStatesEnum.Powering)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -32,17 +32,13 @@ class CountdownState(AwaitLiftoffState):
     def update(self, T, dt):
         return super().update(T, dt)
 
-    def collectTelemetry(self):
-        group = GroupBuilder("cd_state")
-        return group.build()
-
     def onExit(self, T, dt):
         super().onExit(T, dt)
 
 
-class PoweringState(StateBase):
+class AscendingState(StateBase):
     def __init__(self, target_altitude):
-        super().__init__("POWERING", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 3, target_altitude)])
+        super().__init__("ascending", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 2, target_altitude)])
         self.target_altitude = target_altitude
         self.pid = PIDController(15, 0, 0)
         self.pid.setSetpoint(1)
@@ -78,11 +74,11 @@ class PoweringState(StateBase):
 
         return super().update(T, dt)
 
-    def collectTelemetry(self):
-        group = GroupBuilder("powering_state")
-        group.addData('target', self.target_altitude)
-        group.addData('apo_altitude', self.apo_altitude())
-        return group.build()
+    def provideTelemetry(self):
+        data = TelemetryBuilder(self.getName())
+        data.addData('target', self.target_altitude)
+        data.addData('apo_altitude', self.apo_altitude())
+        return data.build()
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
@@ -97,7 +93,7 @@ class PoweringState(StateBase):
 
 class DescendingState(StateBase):
     def __init__(self):
-        super().__init__("DESCENDING_STATE", [LandingEvent(StateMachine.TERMINATE_MACHINE)])
+        super().__init__("descending", [LandingEvent(StateMachine.TERMINATE_MACHINE)])
 
         self.altitude = None
 
@@ -108,10 +104,10 @@ class DescendingState(StateBase):
     def update(self, T, dt):
         return super().update(T, dt)
 
-    def collectTelemetry(self):
-        group = GroupBuilder("descent_state")
-        group.addData('altitude', self.altitude())
-        return group.build()
+    def provideTelemetry(self):
+        data = TelemetryBuilder(self.getName())
+        data.addData('altitude', self.altitude())
+        return data.build()
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
@@ -120,7 +116,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: PoweringState(500),
+    GrasshopperStatesEnum.Powering: AscendingState(100),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 

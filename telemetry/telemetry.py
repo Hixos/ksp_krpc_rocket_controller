@@ -1,44 +1,51 @@
-from fsm.fsm import StateMachine
-
-from global_streams import global_streams
-
-telemetry_unit = {}
+telemetry = {}
+telemetry_providers = {}
 
 
-class GroupBuilder:
+class TelemetryProviderInterface:
+    def getProviderKey(self):
+        return NotImplemented
+
+    def provideTelemetry(self):
+        """
+        Returns telemetry data.
+        Use telemetry.TelemetryBuilder to create the object
+        :return:
+        """
+        return NotImplemented
+
+
+class TelemetryBuilder:
+    """
+    Creates the object to be returned by a provider's provideTelemetry method.
+    """
     def __init__(self, group_name):
-        self.group_name = group_name
         self.data = {}
+        self.group_name = group_name
 
     def addData(self, key, value):
         self.data[key] = value
         return self
 
     def build(self):
-        return self.group_name + "_group", self.data
+        return self.group_name + "_telemetry", self.data
 
 
-def addGroup(group):
-    telemetry_unit[group[0]] = group[1]
+def addProvider(provider: TelemetryProviderInterface):
+    telemetry_providers[provider.getProviderKey()] = provider
 
 
-def update(state_machine, T, dt):
+def removeProvider(provider: TelemetryProviderInterface):
+    del telemetry_providers[provider.getProviderKey()]
+
+
+def update():
     # Reset telemetry
-    global telemetry_unit
-    telemetry_unit = {}
+    global telemetry
+    telemetry = {}
 
-    collect(state_machine, T, dt)
+    for k in telemetry_providers.keys():  # type: TelemetryProviderInterface
+        data = telemetry_providers[k].provideTelemetry()
+        telemetry[data[0]] = data[1]
 
-    print(telemetry_unit)
-
-
-def collect(state_machine: StateMachine, T ,dt):
-    basic = GroupBuilder('basic')
-    basic.addData('ut', global_streams.ut())
-    basic.addData('T', T)
-    basic.addData('dt', dt)
-
-    addGroup(basic.build())
-    addGroup(state_machine.collectTelemetry())
-
-
+    print(telemetry)
