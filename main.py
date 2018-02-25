@@ -8,7 +8,7 @@ from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInte
     addUser
 from telemetry.live_display import live_telemetry
 
-from controllers.grasshopper import GrasshopperStates, AscendingState, DescendingState
+from controllers.grasshopper.grasshopper import GrasshopperStates, AscendingState, DescendingState
 
 # Interval of time between loops of the main loop
 loop_dt = 0.1

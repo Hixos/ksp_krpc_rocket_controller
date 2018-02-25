@@ -3,26 +3,17 @@ from fsm.fsm import StateMachine, StateBase
 from telemetry.telemetry import TelemetryBuilder
 from telemetry.live_display import live_telemetry
 
-from enum import IntEnum, unique
-
-from .common.states import AwaitLiftoffState
-from .common.events import LandingEvent, AtApoapsisEvent
+from ..common.states import AwaitLiftoffState
+from ..common.events import LandingEvent, AtApoapsisEvent
 
 from utils.control.pid import PIDController
 from utils.vessel_utils import throttleFromTwr
 from utils.physiscs_utils import gravitationalAcceleration
 
 
-@unique
-class GrasshopperStatesEnum(IntEnum):
-    AwaitLiftoff = 1
-    Powering = 2
-    Descending = 3
-
-
 class CountdownState(AwaitLiftoffState):
-    def __init__(self):
-        super().__init__("Countdown", 3, GrasshopperStatesEnum.Powering)
+    def __init__(self, next_state, countdown_length):
+        super().__init__("Countdown", countdown_length, next_state)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -41,8 +32,8 @@ class AscendingState(StateBase):
     TELEMETRY_GKEY = "ascending_state"
     TELEMETRY_GNAME = "Ascending State"
 
-    def __init__(self, target_altitude):
-        super().__init__("Ascending", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 2, target_altitude)])
+    def __init__(self, next_state, target_altitude, enable_event_at=2):
+        super().__init__("Ascending", [AtApoapsisEvent(next_state, enable_event_at, target_altitude)])
         self.target_altitude = target_altitude
         self.pid = PIDController(15, 0, 0)
         self.pid.setSetpoint(1)
@@ -103,8 +94,8 @@ class DescendingState(StateBase):
     TELEMETRY_GKEY = "descending_state"
     TELEMETRY_GNAME = "Descending State"
 
-    def __init__(self):
-        super().__init__("Descending", [LandingEvent(StateMachine.TERMINATE_MACHINE)])
+    def __init__(self, next_state):
+        super().__init__("Descending", [LandingEvent(next_state)])
 
         self.altitude = None
 
@@ -129,9 +120,5 @@ class DescendingState(StateBase):
         self.altitude.remove()
 
 
-GrasshopperStates = {
-    GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: AscendingState(1000),
-    GrasshopperStatesEnum.Descending: DescendingState()
-    }
+
 
