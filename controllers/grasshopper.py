@@ -1,6 +1,7 @@
 from ksp_krpc import vessel, VesselStreams
-from fsm.fsm import StateMachine, StateBase, EventBase
+from fsm.fsm import StateMachine, StateBase
 from telemetry.telemetry import TelemetryBuilder
+from telemetry.live_display import live_telemetry
 
 from enum import IntEnum, unique
 
@@ -21,7 +22,7 @@ class GrasshopperStatesEnum(IntEnum):
 
 class CountdownState(AwaitLiftoffState):
     def __init__(self):
-        super().__init__("countdown", 3, GrasshopperStatesEnum.Powering)
+        super().__init__("Countdown", 3, GrasshopperStatesEnum.Powering)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -37,8 +38,11 @@ class CountdownState(AwaitLiftoffState):
 
 
 class AscendingState(StateBase):
+    TELEMETRY_GKEY = "ascending_state"
+    TELEMETRY_GNAME = "Ascending State"
+
     def __init__(self, target_altitude):
-        super().__init__("ascending", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 2, target_altitude)])
+        super().__init__("Ascending", [AtApoapsisEvent(GrasshopperStatesEnum.Descending, 2, target_altitude)])
         self.target_altitude = target_altitude
         self.pid = PIDController(15, 0, 0)
         self.pid.setSetpoint(1)
@@ -52,6 +56,10 @@ class AscendingState(StateBase):
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
+
+        # Add telemetry from this state to the live display
+        live_telemetry.logGroup(self.getName())
+
         self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
         self.mass = VesselStreams.mass()
         self.orbit_radius = VesselStreams.Orbit.radiusStream()
@@ -75,9 +83,9 @@ class AscendingState(StateBase):
         return super().update(T, dt)
 
     def provideTelemetry(self):
-        data = TelemetryBuilder(self.getName())
-        data.addData('target', self.target_altitude)
-        data.addData('apo_altitude', self.apo_altitude())
+        data = TelemetryBuilder(self.TELEMETRY_GKEY, self.TELEMETRY_GNAME)
+        data.addData('target_altitude', "Target altitude", self.target_altitude, "m")
+        data.addData('apo_altitude', "Apoapsis altitude", self.apo_altitude(), "m")
         return data.build()
 
     def onExit(self, T, dt):
@@ -92,21 +100,28 @@ class AscendingState(StateBase):
 
 
 class DescendingState(StateBase):
+    TELEMETRY_GKEY = "descending_state"
+    TELEMETRY_GNAME = "Descending State"
+
     def __init__(self):
-        super().__init__("descending", [LandingEvent(StateMachine.TERMINATE_MACHINE)])
+        super().__init__("Descending", [LandingEvent(StateMachine.TERMINATE_MACHINE)])
 
         self.altitude = None
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
+
+        # Add telemetry from this state to the live display
+        live_telemetry.logGroup(self.getName())
+
         self.altitude = VesselStreams.Flight.surfaceAltitudeStream()
 
     def update(self, T, dt):
         return super().update(T, dt)
 
     def provideTelemetry(self):
-        data = TelemetryBuilder(self.getName())
-        data.addData('altitude', self.altitude())
+        data = TelemetryBuilder(self.TELEMETRY_GKEY, self.TELEMETRY_GNAME)
+        data.addData('altitude', "Altitude", self.altitude(), "m")
         return data.build()
 
     def onExit(self, T, dt):
@@ -116,7 +131,7 @@ class DescendingState(StateBase):
 
 GrasshopperStates = {
     GrasshopperStatesEnum.AwaitLiftoff: CountdownState(),
-    GrasshopperStatesEnum.Powering: AscendingState(100),
+    GrasshopperStatesEnum.Powering: AscendingState(1000),
     GrasshopperStatesEnum.Descending: DescendingState()
     }
 

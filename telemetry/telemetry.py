@@ -1,5 +1,6 @@
 telemetry = {}
 telemetry_providers = {}
+telemetry_users = {}
 
 
 class TelemetryProviderInterface:
@@ -15,20 +16,31 @@ class TelemetryProviderInterface:
         return NotImplemented
 
 
+class TelemetryUserInterface:
+    def getUserKey(self):
+        return NotImplemented
+
+    def update(self, telemetry):
+        return NotImplemented
+
+
 class TelemetryBuilder:
     """
     Creates the object to be returned by a provider's provideTelemetry method.
     """
-    def __init__(self, group_name):
-        self.data = {}
+    def __init__(self, group_key, group_name):
+        self.group_key = group_key
         self.group_name = group_name
+        self.data = {}
 
-    def addData(self, key, value):
-        self.data[key] = value
+    def addData(self, key, name, value, unit=""):
+        self.data[key] = {'name': name,
+                          'value': value,
+                          'unit': unit}
         return self
 
     def build(self):
-        return self.group_name + "_telemetry", self.data
+        return self.group_key, {'group_name': self.group_name, 'data': self.data}
 
 
 def addProvider(provider: TelemetryProviderInterface):
@@ -39,13 +51,23 @@ def removeProvider(provider: TelemetryProviderInterface):
     del telemetry_providers[provider.getProviderKey()]
 
 
+def addUser(user: TelemetryUserInterface):
+    telemetry_users[user.getUserKey()] = user
+
+
+def removeUser(user: TelemetryUserInterface):
+    del telemetry_users[user.getUserKey()]
+
+
 def update():
     # Reset telemetry
     global telemetry
     telemetry = {}
 
-    for k in telemetry_providers.keys():  # type: TelemetryProviderInterface
+    for k in telemetry_providers.keys():
         data = telemetry_providers[k].provideTelemetry()
-        telemetry[data[0]] = data[1]
+        if data is not None:
+            telemetry[data[0]] = data[1]
 
-    print(telemetry)
+    for k in telemetry_users.keys():
+        telemetry_users[k].update(telemetry)

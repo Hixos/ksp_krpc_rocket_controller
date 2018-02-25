@@ -4,10 +4,11 @@ from global_streams import global_streams
 from fsm.fsm import StateMachine
 from ksp_krpc import Stream
 
-from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInterface, TelemetryBuilder, addProvider
+from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInterface, TelemetryBuilder, addProvider, \
+    addUser
+from telemetry.live_display import live_telemetry
 
-from controllers.grasshopper import GrasshopperStates
-
+from controllers.grasshopper import GrasshopperStates, AscendingState, DescendingState
 
 # Interval of time between loops of the main loop
 loop_dt = 0.1
@@ -15,36 +16,46 @@ loop_dt = 0.1
 # Interval of in-game time elapsed between loops
 game_dt = 0
 
-# Epoch
-T0 = global_streams.ut()
+epoch = global_streams.ut()
 
+# In-game time since epoch
 T = 0
 last_T = 0
 
 time.sleep(loop_dt)
 
+machine = StateMachine(GrasshopperStates)
+
 
 class MainTelemetryProvider(TelemetryProviderInterface):
+    TELEMETRY_GKEY = "main"
+
     def getProviderKey(self):
         return "main"
 
     def provideTelemetry(self):
-        builder = TelemetryBuilder("main")
-        builder.addData('T0', T0)
-        builder.addData('T', T)
-        builder.addData('game_dt', game_dt)
+        builder = TelemetryBuilder("main", "Main Telemetry")
+        builder.addData('t', "T", T, "s")
+        builder.addData('game_dt', "Game dt", game_dt, "s")
+        builder.addData('active_state', "Current state", machine.getActiveState().getName())
         return builder.build()
 
-
-machine = StateMachine(GrasshopperStates)
 
 addProvider(MainTelemetryProvider())
 addProvider(machine)
 
+live_telemetry.logGroup(MainTelemetryProvider.TELEMETRY_GKEY)
+live_telemetry.logGroup(AscendingState.TELEMETRY_GKEY)
+live_telemetry.logGroup(DescendingState.TELEMETRY_GKEY)
+
+live_telemetry.showWindow()
+
+addUser(live_telemetry)
+
 while True:
     start = time.time()
     if not global_streams.game_paused():  # If game is paused, pause too
-        T = global_streams.ut() - T0  # Game time elapsed from start of the program
+        T = global_streams.ut() - epoch  # Game time elapsed from start of the program
         game_dt = T - last_T
 
         # Flight reverted, quicksave loaded or other invalidating actions. Stop the script.
@@ -77,3 +88,6 @@ if len(Stream.streams) > 0:
     print("\n\nUNCLOSED STREAMS:")
     for k in Stream.streams.keys():
         print("{} - instances: {}".format(k, Stream.streams[k].open_instances))
+
+# Wait for user to close telemetry window
+live_telemetry.startMainLoop()

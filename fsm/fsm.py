@@ -9,13 +9,13 @@ class StateMachine(TelemetryProviderInterface):
         self.states = states
 
         # Starting state is always the first of the list
-        self.activeState = 1
+        self.active_state = 1
         self.entered_active_state = False
 
-        self.nextState = StateMachine.NO_STATE
+        self.next_state = StateMachine.NO_STATE
 
     def getActiveState(self):
-        return self.states[self.activeState]
+        return self.states[self.active_state]
 
     def enterActiveState(self, T, dt):
         self.getActiveState().onEntry(T, dt)
@@ -28,17 +28,17 @@ class StateMachine(TelemetryProviderInterface):
         print("{} on Exit".format(self.getActiveState().getName()))
 
     def update(self, T, dt):
-        if self.nextState > StateMachine.NO_STATE:
+        if self.next_state > StateMachine.NO_STATE:
             self.exitActiveState(T, dt)
-            self.activeState = self.nextState
-            self.nextState = StateMachine.NO_STATE
+            self.active_state = self.next_state
+            self.next_state = StateMachine.NO_STATE
 
         if not self.entered_active_state:
             self.enterActiveState(T, dt)
 
-        self.nextState = self.getActiveState().update(T, dt)
+        self.next_state = self.getActiveState().update(T, dt)
 
-        return self.nextState != StateMachine.TERMINATE_MACHINE
+        return self.next_state != StateMachine.TERMINATE_MACHINE
 
     def getProviderKey(self):
         return "active_state"
@@ -48,9 +48,6 @@ class StateMachine(TelemetryProviderInterface):
 
     def terminate(self, T, dt):
         self.exitActiveState(T, dt)
-
-    def activeStateName(self):
-        return self.states[self.activeState].getName()
 
 
 class EventBase:
@@ -72,7 +69,7 @@ class EventBase:
 
 class StateBase(TelemetryProviderInterface):
     def __init__(self, name, events=[]):
-        self.name = name + "_state"
+        self.name = name
         self.events = events
 
     def addEvent(self, event):
@@ -98,7 +95,7 @@ class StateBase(TelemetryProviderInterface):
 
     def provideTelemetry(self):
         # Return empty data as default
-        return TelemetryBuilder(self.getName()).build()
+        return None
 
     def onExit(self, T, dt):
         for e in self.events:

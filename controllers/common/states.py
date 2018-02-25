@@ -4,8 +4,8 @@ from .events import LiftoffEvent
 
 # Copy this when creating new states
 class EmptyState(StateBase):
-    def __init__(self):
-        super().__init__("EMPTY_STATE")
+    def __init__(self, name):
+        super().__init__(name)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)

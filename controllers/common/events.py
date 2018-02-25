@@ -5,8 +5,8 @@ from utils.vessel_utils import lowest_altitude
 
 # Copy this when creating new events
 class EmptyEvent(EventBase):
-    def __init__(self):
-        super().__init__("EMPTY_EVENT")
+    def __init__(self, event_name):
+        super().__init__(event_name)
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
@@ -19,8 +19,8 @@ class EmptyEvent(EventBase):
 
 
 class LiftoffEvent(EventBase):
-    def __init__(self, countdown_length, next_state_id):
-        super().__init__("LIFTOFF_EVENT")
+    def __init__(self, countdown_length, next_state_id, event_name="On Liftoff"):
+        super().__init__(event_name)
         self.T0 = 0
         self.countdown_length = countdown_length
         self.next_state_id = next_state_id
@@ -38,8 +38,9 @@ class LiftoffEvent(EventBase):
 
 
 class AtApoapsisEvent(EventBase):
-    def __init__(self, next_state_id, start_after_seconds=0, target_apoapsis=0, tolerance=0.01):
-        super().__init__("AtApoapsisEvent")
+    def __init__(self, next_state_id, start_after_seconds=0, target_apoapsis=0, tolerance=0.01,
+                 event_name="At Apoapsis"):
+        super().__init__(event_name)
 
         self.next_state_id = next_state_id
         self.tolerance = tolerance
@@ -80,8 +81,8 @@ class AtApoapsisEvent(EventBase):
 
 
 class LandingEvent(EventBase):
-    def __init__(self, next_state_id):
-        super().__init__("EMPTY EVENT")
+    def __init__(self, next_state_id, event_name="On Landing"):
+        super().__init__(event_name)
         self.next_state_id = next_state_id
         self.altitude = None
         self.bounding_box = None
