@@ -4,9 +4,9 @@ from global_streams import global_streams
 from fsm.fsm import StateMachine
 from ksp_krpc import Stream
 
-from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInterface, TelemetryBuilder, addProvider, \
-    addUser
-from telemetry.live_display import live_telemetry
+# from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInterface, TelemetryBuilder, addProvider, \
+#     addUser
+# from telemetry.live_display import live_telemetry
 
 from controllers.grasshopper.grasshopper import GrasshopperStates, AscendingState, DescendingState
 
