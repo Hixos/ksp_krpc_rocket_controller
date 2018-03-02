@@ -61,7 +61,7 @@ class LiveTelemetryWindow(TelemetryUserInterface):
             names_str = ""
             values_str = ""
 
-            for provider in self.providers:
+            for provider in reversed(self.providers):
                 provider_key = provider[1]
                 if provider_key in telemetry:
                     data = telemetry[provider_key]
