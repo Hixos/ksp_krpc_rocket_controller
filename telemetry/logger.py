@@ -13,7 +13,6 @@ class TelemetryLogger(TelemetryUserInterface):
 
     def logProvider(self, provider_key):
         file_name = os.path.join("logs", provider_key + ".csv")
-        #path = os.path.join(os.path.abspath(__file__), file_name)
         file = open(file_name, 'w', newline='')
         self.providers.append(provider_key)
 
