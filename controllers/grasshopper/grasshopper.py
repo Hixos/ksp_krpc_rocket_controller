@@ -2,6 +2,7 @@ from .grasshopper_states import *
 
 from telemetry.telemetry import telemetry_manager
 from telemetry.live_display import live_telemetry
+from telemetry.logger import telemetry_logger
 from fsm.fsm import StateMachine
 from enum import IntEnum, unique
 
@@ -28,4 +29,5 @@ telemetry_manager.registerProvider('ascending_state', "Ascending State", ascendi
 telemetry_manager.registerProvider('descending_state', "Descending State", descending)
 
 live_telemetry.displayProvider('ascending_state')
-live_telemetry.displayProvider('descending_state')
+telemetry_logger.logProvider('ascending_state')
+#live_telemetry.displayProvider('descending_state')

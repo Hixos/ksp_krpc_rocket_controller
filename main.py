@@ -2,7 +2,7 @@ import time
 
 from global_streams import global_streams
 from fsm.fsm import StateMachine
-from ksp_krpc import Stream
+from ksp_krpc import Stream, VesselStreams
 
 from telemetry.telemetry import telemetry_manager as tm_manager, TelemetryProviderInterface, TelemetryDescriptionBuilder
 
@@ -29,14 +29,22 @@ machine = StateMachine(GrasshopperStates)
 
 
 class MainTelemetryProvider(TelemetryProviderInterface):
+    def __init__(self):
+        self.mean_altitude = VesselStreams.Flight.meanAltitudeStream()
+        self.surf_altitude = VesselStreams.Flight.surfaceAltitudeStream()
+        self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
+
     def getTelemetry(self):
-        return [T, game_dt, machine.getActiveState().getName()]
+        return [T, game_dt, machine.getActiveState().getName(), self.surf_altitude(),
+                self.mean_altitude(), self.apo_altitude()]
 
     def describeTelemetry(self):
         return TelemetryDescriptionBuilder()\
-            .addData('t', 'T', 's')\
             .addData('game_dt', 'Game dt', 's')\
             .addData('active_state', 'Active State')\
+            .addData('surface_altitude', "Surface Altitude", 'm') \
+            .addData('mean_altitude', "Mean Altitude", 'm') \
+            .addData('apo_altitude', 'Apoapsis Altitude', 'm')\
             .build()
 
 

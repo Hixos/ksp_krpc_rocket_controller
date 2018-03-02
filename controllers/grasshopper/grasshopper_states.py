@@ -44,21 +44,18 @@ class AscendingState(StateBase):
 
     def describeTelemetry(self):
         return TelemetryDescriptionBuilder()\
-            .addData('target_altitude', "Target altitude", "m")\
-            .addData('apo_altitude', "Apoapsis altitude", "m")\
+            .addData('target_altitude', "Target altitude", "m") \
+            .addData('apoapsis_error', "Apoapsis error", "m") \
             .build()
 
     def getTelemetry(self):
         if self.isActive():
-            return [self.target_altitude, self.apo_altitude()]
+            return [self.target_altitude, self.target_altitude - self.apo_altitude()]
         else:
             return None
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
-
-        # Add telemetry from this state to the live display
-        live_telemetry.displayProvider(self.getName())
 
         self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
         self.mass = VesselStreams.mass()
@@ -102,25 +99,16 @@ class DescendingState(StateBase):
 
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
-
-        # Add telemetry from this state to the live display
-        live_telemetry.displayProvider(self.getName())
-
         self.altitude = VesselStreams.Flight.surfaceAltitudeStream()
 
     def update(self, T, dt):
         return super().update(T, dt)
 
     def describeTelemetry(self):
-        return TelemetryDescriptionBuilder()\
-            .addData('altitude', "Altitude", "m")\
-            .build()
+        return TelemetryDescriptionBuilder().build()
 
     def getTelemetry(self):
-        if self.isActive():
-            return [self.altitude()]
-        else:
-            return None
+        return None
 
     def onExit(self, T, dt):
         super().onExit(T, dt)
