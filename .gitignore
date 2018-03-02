@@ -1,4 +1,4 @@
 test.py
-logs/
+logs/*.csv
 .idea/
 **/__pycache__/
