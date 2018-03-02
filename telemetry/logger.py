@@ -26,13 +26,13 @@ class TelemetryLogger(TelemetryUserInterface):
             data_keys = [k['key'] for k in providers[provider_key]['data']]
             if not self.inited[provider_key]:
                 writer = csv.DictWriter(self.files[provider_key], delimiter=',', quotechar='"',
-                                        quoting=csv.QUOTE_NONNUMERIC, fieldnames=data_keys)  # type:csv.DictWriter
+                                        quoting=csv.QUOTE_NONNUMERIC, fieldnames=['T'] + data_keys)  # type:csv.DictWriter
                 self.csv_writers[provider_key] = writer
                 writer.writeheader()
                 self.inited[provider_key] = True
 
             if provider_key in telemetry and telemetry[provider_key] is not None:
-                data = {}
+                data = {'T': T}
                 for i in range(0, len(data_keys)):
                     data[data_keys[i]] = telemetry[provider_key][i]
 

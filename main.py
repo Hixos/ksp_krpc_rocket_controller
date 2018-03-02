@@ -35,7 +35,7 @@ class MainTelemetryProvider(TelemetryProviderInterface):
         self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
 
     def getTelemetry(self):
-        return [T, game_dt, machine.getActiveState().getName(), self.surf_altitude(),
+        return [game_dt, machine.getActiveState().getName(), self.surf_altitude(),
                 self.mean_altitude(), self.apo_altitude()]
 
     def describeTelemetry(self):
@@ -47,8 +47,13 @@ class MainTelemetryProvider(TelemetryProviderInterface):
             .addData('apo_altitude', 'Apoapsis Altitude', 'm')\
             .build()
 
+    def close(self):
+        self.mean_altitude.remove()
+        self.apo_altitude.remove()
+        self.surf_altitude.remove()
 
-tm_manager.registerProvider('main_telemetry', "Main Telemetry", MainTelemetryProvider())
+main_provider = MainTelemetryProvider()
+tm_manager.registerProvider('main_telemetry', "Main Telemetry", main_provider)
 
 live_telemetry.displayProvider('main_telemetry')
 live_telemetry.showWindow()
@@ -87,6 +92,7 @@ while True:
 
 # Cleanup
 global_streams.closeStreams()
+main_provider.close()
 
 # Check for leaks
 print("\nScript ended")
