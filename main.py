@@ -4,11 +4,12 @@ from global_streams import global_streams
 from fsm.fsm import StateMachine
 from ksp_krpc import Stream
 
-# from telemetry.telemetry import update as updateTelemetry, TelemetryProviderInterface, TelemetryBuilder, addProvider, \
-#     addUser
-# from telemetry.live_display import live_telemetry
+from telemetry.telemetry import telemetry_manager as tm_manager, TelemetryProviderInterface, TelemetryDescriptionBuilder
 
-from controllers.grasshopper.grasshopper import GrasshopperStates, AscendingState, DescendingState
+from telemetry.live_display import live_telemetry
+from telemetry.logger import telemetry_logger
+
+from controllers.grasshopper.grasshopper import GrasshopperStates
 
 # Interval of time between loops of the main loop
 loop_dt = 0.1
@@ -28,29 +29,26 @@ machine = StateMachine(GrasshopperStates)
 
 
 class MainTelemetryProvider(TelemetryProviderInterface):
-    TELEMETRY_GKEY = "main"
+    def getTelemetry(self):
+        return [T, game_dt, machine.getActiveState().getName()]
 
-    def getProviderKey(self):
-        return "main"
-
-    def provideTelemetry(self):
-        builder = TelemetryBuilder("main", "Main Telemetry")
-        builder.addData('t', "T", T, "s")
-        builder.addData('game_dt', "Game dt", game_dt, "s")
-        builder.addData('active_state', "Current state", machine.getActiveState().getName())
-        return builder.build()
+    def describeTelemetry(self):
+        return TelemetryDescriptionBuilder()\
+            .addData('t', 'T', 's')\
+            .addData('game_dt', 'Game dt', 's')\
+            .addData('active_state', 'Active State')\
+            .build()
 
 
-addProvider(MainTelemetryProvider())
-addProvider(machine)
+tm_manager.registerProvider('main_telemetry', "Main Telemetry", MainTelemetryProvider())
 
-live_telemetry.logGroup(MainTelemetryProvider.TELEMETRY_GKEY)
-live_telemetry.logGroup(AscendingState.TELEMETRY_GKEY)
-live_telemetry.logGroup(DescendingState.TELEMETRY_GKEY)
-
+live_telemetry.displayProvider('main_telemetry')
 live_telemetry.showWindow()
 
-addUser(live_telemetry)
+telemetry_logger.logProvider('main_telemetry')
+
+tm_manager.registerUser("live_display", live_telemetry)
+tm_manager.registerUser("logger", telemetry_logger)
 
 while True:
     start = time.time()
@@ -66,7 +64,7 @@ while True:
         # Don't control anything if game_dt is zero
         if game_dt > 0:
             go_on = machine.update(T, game_dt)
-            updateTelemetry()
+            tm_manager.update(T, game_dt)
             if not go_on:
                 machine.terminate(T, game_dt)
                 print("State machine terminated")

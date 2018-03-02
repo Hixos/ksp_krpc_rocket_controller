@@ -29,7 +29,7 @@ class TelemetryManager:
             raise TelemetryManager.ProviderAlreadyRegisteredError("Telemetry provider {} already registered."
                                                                   .format(provider_key))
 
-        self.providers[provider_key] = {'name': provider_name, 'object': provider, 'data': provider.describeData()}
+        self.providers[provider_key] = {'name': provider_name, 'object': provider, 'data': provider.describeTelemetry()}
 
     def collectTelemetry(self):
         for key in self.providers.keys():
@@ -43,25 +43,11 @@ class TelemetryManager:
 
             self.telemetry[key] = tel
 
-    def join(self, telemetry, provider):
-        """
-        Joins telemetry and providers in a single dictionary
-        """
-        for k in provider.keys():
-            if telemetry[k] is not None:
-                del provider[k]['object']
-                for i in range(0, len(provider[k]['data'])):
-                    provider[k]['data'][i]['value'] = telemetry[k][i]
-            else:
-                del provider[k]
-
-        return provider
-
-    def update(self):
+    def update(self, T, dt):
         self.collectTelemetry()
 
         for k in self.users.keys():
-            self.users[k].update(self.join(self.telemetry, self.providers))
+            self.users[k].update(self.telemetry, self.providers, T, dt)
 
     def close(self):
         for k in self.users.keys():
@@ -72,7 +58,7 @@ class TelemetryProviderInterface:
     """
     Interface for a telemetry provider.
     """
-    def describeData(self):
+    def describeTelemetry(self):
         """
         Returns a description of the telemetry data.
         This method is called once upon the provider registration in the TelemetryManager.
@@ -85,7 +71,7 @@ class TelemetryProviderInterface:
 
     def getTelemetry(self):
         """
-        Return a list containing the current telemetry data, in the order specified by describeData
+        Return a list containing the current telemetry data, in the order specified by describeData, or None
         """
         return NotImplemented
 
@@ -94,7 +80,7 @@ class TelemetryDescriptionBuilder:
     def __init__(self):
         self.desc = []
 
-    def addData(self, key, name, unit):
+    def addData(self, key, name, unit=''):
         """
         Add a new data
         :param key: Unique key
@@ -109,8 +95,10 @@ class TelemetryDescriptionBuilder:
 
 
 class TelemetryUserInterface:
-    def update(self, telemetry):
+    def update(self, telemetry, providers, T, dt):
         return NotImplemented
 
     def close(self):
         pass
+
+telemetry_manager = TelemetryManager()

@@ -1,48 +1,45 @@
 from .telemetry import TelemetryUserInterface
 
+import os
 import csv
 
+
 class TelemetryLogger(TelemetryUserInterface):
-    def __init__(self, filename, telemetry_ukey):
-        self.telemetry_key = telemetry_ukey
-        self.file_name = filename
-        self.groups = []
+    def __init__(self):
+        self.providers = []
+        self.inited = {}
+        self.files = {}
+        self.csv_writers = {}
 
-        self.file = open(self.file_name, 'w' newline='')
-        self.writer = csv.writer(self.file, delimiter=',', quotechar='"',
-                                 quoting=csv.QUOTE_NONNUMERIC)  # type: csv.DictWriter
+    def logProvider(self, provider_key):
+        file_name = os.path.join("logs", provider_key + ".csv")
+        #path = os.path.join(os.path.abspath(__file__), file_name)
+        file = open(file_name, 'w', newline='')
+        self.providers.append(provider_key)
 
-    def logGroups(self, *group_keys):
-        self.groups.append(group_keys)
+        self.inited[provider_key] = False
+        self.files[provider_key] = file
 
-    def update(self, telemetry):
-        super().update(telemetry)
+    def update(self, telemetry, providers, T, dt):
+        for provider_key in self.providers:
+            # Check if we wrote the header for the provider:
+            data_keys = [k['key'] for k in providers[provider_key]['data']]
+            if not self.inited[provider_key]:
+                writer = csv.DictWriter(self.files[provider_key], delimiter=',', quotechar='"',
+                                        quoting=csv.QUOTE_NONNUMERIC, fieldnames=data_keys)  # type:csv.DictWriter
+                self.csv_writers[provider_key] = writer
+                writer.writeheader()
+                self.inited[provider_key] = True
 
-    def getRow(self, telemetry):
-        row = []
-        for group_key in self.groups:
-            if group_key in telemetry:
-                group = telemetry[group_key]
-                names_str += "\n{}\n".format(str.upper(group['group_name']))
-                values_str += "\n\n"
+            if provider_key in telemetry and telemetry[provider_key] is not None:
+                data = {}
+                for i in range(0, len(data_keys)):
+                    data[data_keys[i]] = telemetry[provider_key][i]
 
-                data = group['data']
-                for key_name in data:
-                    names_str += data[key_name]['name'] + ":\n"
-                    val = data[key_name]['value']
-                    unit = data[key_name]['unit']
+                self.csv_writers[provider_key].writerow(data)
 
-                    if unit != "":
-                        unit = " " + unit
+    def close(self):
+        for k in self.files.keys():
+            self.files[k].close()
 
-                    if isinstance(val, float):
-                        val = round(val, 3)
-
-                    values_str += str(val) + unit + '\n'
-
-    def getUserKey(self):
-        return self.telemetry_key
-
-    def finalize(self):
-        self.file.close()
-
+telemetry_logger = TelemetryLogger()

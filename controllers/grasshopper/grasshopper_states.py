@@ -1,6 +1,6 @@
 from ksp_krpc import vessel, VesselStreams
 from fsm.fsm import StateMachine, StateBase
-from telemetry.telemetry import TelemetryBuilder
+from telemetry.telemetry import TelemetryDescriptionBuilder
 from telemetry.live_display import live_telemetry
 
 from ..common.states import AwaitLiftoffState
@@ -29,9 +29,6 @@ class CountdownState(AwaitLiftoffState):
 
 
 class AscendingState(StateBase):
-    TELEMETRY_GKEY = "ascending_state"
-    TELEMETRY_GNAME = "Ascending State"
-
     def __init__(self, next_state, target_altitude, enable_event_at=2):
         super().__init__("Ascending", [AtApoapsisEvent(next_state, enable_event_at, target_altitude)])
         self.target_altitude = target_altitude
@@ -45,11 +42,23 @@ class AscendingState(StateBase):
 
         self.GM = VesselStreams.Orbit.CelestialBody.gravitationalParameter()
 
+    def describeTelemetry(self):
+        return TelemetryDescriptionBuilder()\
+            .addData('target_altitude', "Target altitude", "m")\
+            .addData('apo_altitude', "Apoapsis altitude", "m")\
+            .build()
+
+    def getTelemetry(self):
+        if self.isActive():
+            return [self.target_altitude, self.apo_altitude()]
+        else:
+            return None
+
     def onEntry(self, T, dt):
         super().onEntry(T, dt)
 
         # Add telemetry from this state to the live display
-        live_telemetry.logGroup(self.getName())
+        live_telemetry.displayProvider(self.getName())
 
         self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
         self.mass = VesselStreams.mass()
@@ -73,12 +82,6 @@ class AscendingState(StateBase):
 
         return super().update(T, dt)
 
-    def provideTelemetry(self):
-        data = TelemetryBuilder(self.TELEMETRY_GKEY, self.TELEMETRY_GNAME)
-        data.addData('target_altitude', "Target altitude", self.target_altitude, "m")
-        data.addData('apo_altitude', "Apoapsis altitude", self.apo_altitude(), "m")
-        return data.build()
-
     def onExit(self, T, dt):
         super().onExit(T, dt)
         vessel.control.throttle = 0
@@ -91,8 +94,6 @@ class AscendingState(StateBase):
 
 
 class DescendingState(StateBase):
-    TELEMETRY_GKEY = "descending_state"
-    TELEMETRY_GNAME = "Descending State"
 
     def __init__(self, next_state):
         super().__init__("Descending", [LandingEvent(next_state)])
@@ -103,17 +104,23 @@ class DescendingState(StateBase):
         super().onEntry(T, dt)
 
         # Add telemetry from this state to the live display
-        live_telemetry.logGroup(self.getName())
+        live_telemetry.displayProvider(self.getName())
 
         self.altitude = VesselStreams.Flight.surfaceAltitudeStream()
 
     def update(self, T, dt):
         return super().update(T, dt)
 
-    def provideTelemetry(self):
-        data = TelemetryBuilder(self.TELEMETRY_GKEY, self.TELEMETRY_GNAME)
-        data.addData('altitude', "Altitude", self.altitude(), "m")
-        return data.build()
+    def describeTelemetry(self):
+        return TelemetryDescriptionBuilder()\
+            .addData('altitude', "Altitude", "m")\
+            .build()
+
+    def getTelemetry(self):
+        if self.isActive():
+            return [self.altitude()]
+        else:
+            return None
 
     def onExit(self, T, dt):
         super().onExit(T, dt)

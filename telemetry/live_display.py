@@ -20,7 +20,7 @@ window_height = 600
 class LiveTelemetryWindow(TelemetryUserInterface):
     def __init__(self):
         self.is_visible = False
-        self.groups = []
+        self.providers = []
 
         self.root = tk.Tk()
         self.root.configure(background=background_color)
@@ -41,8 +41,14 @@ class LiveTelemetryWindow(TelemetryUserInterface):
 
         self.root.title(title)
 
-    def logGroup(self, group_key):
-        self.groups.append(group_key)
+    def displayProvider(self, provider_key, priority=10):
+        """
+        Adds a telemetry provider to the live display
+        :param provider_key: The provider key used in the TelemetryManager
+        :param priority: Providers with a low priority number will be displayed first in the list
+        """
+        self.providers.append((priority, provider_key))
+        self.providers.sort(key=lambda tup: tup[0])
 
     def showWindow(self, value=True):
         self.is_visible = value
@@ -50,38 +56,37 @@ class LiveTelemetryWindow(TelemetryUserInterface):
     def startMainLoop(self):
         self.root.mainloop()
 
-    def update(self, telemetry):
+    def update(self, telemetry, providers, T, dt):
         if self.is_visible:
             names_str = ""
             values_str = ""
 
-            for group_key in self.groups:
-                if group_key in telemetry:
-                    group = telemetry[group_key]
-                    names_str += "\n{}\n".format(str.upper(group['group_name']))
-                    values_str += "\n\n"
+            for provider in self.providers:
+                provider_key = provider[1]
+                if provider_key in telemetry:
+                    data = telemetry[provider_key]
+                    desc = providers[provider_key]
+                    if data is not None:
+                        names_str += "\n{}\n".format(str.upper(desc['name']))
+                        values_str += "\n\n"
 
-                    data = group['data']
-                    for key_name in data:
-                        names_str += data[key_name]['name'] + ":\n"
-                        val = data[key_name]['value']
-                        unit = data[key_name]['unit']
+                        for i in range(0, len(data)):
+                            names_str += desc['data'][i]['name'] + ":\n"
+                            val = data[i]
+                            unit = desc['data'][i]['unit']
 
-                        if unit != "":
-                            unit = " " + unit
+                            if unit != "":
+                                unit = " " + unit
 
-                        if isinstance(val, float):
-                            val = round(val, 3)
+                            if isinstance(val, float):
+                                val = round(val, 3)
 
-                        values_str += str(val) + unit + '\n'
+                            values_str += str(val) + unit + '\n'
 
             self.lb_names['text'] = names_str
             self.lb_values['text'] = values_str
 
             self.root.update()
-
-    def getUserKey(self):
-        return "live_display"
 
 
 live_telemetry = LiveTelemetryWindow()

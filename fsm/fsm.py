@@ -1,4 +1,4 @@
-from telemetry.telemetry import TelemetryProviderInterface, TelemetryBuilder, addProvider
+from telemetry.telemetry import TelemetryProviderInterface
 
 
 class StateMachine(TelemetryProviderInterface):
@@ -40,9 +40,6 @@ class StateMachine(TelemetryProviderInterface):
 
         return self.next_state != StateMachine.TERMINATE_MACHINE
 
-    def getProviderKey(self):
-        return "active_state"
-
     def provideTelemetry(self):
         return self.getActiveState().provideTelemetry()
 
@@ -71,6 +68,10 @@ class StateBase(TelemetryProviderInterface):
     def __init__(self, name, events=[]):
         self.name = name
         self.events = events
+        self.active = False
+
+    def isActive(self):
+        return self.active
 
     def addEvent(self, event):
         self.events.append(event)
@@ -79,6 +80,7 @@ class StateBase(TelemetryProviderInterface):
         return self.name
 
     def onEntry(self, T, dt):
+        self.active = True
         for e in self.events:
             e.onEntry(T, dt)
 
@@ -90,14 +92,8 @@ class StateBase(TelemetryProviderInterface):
 
         return StateMachine.NO_STATE
 
-    def getKey(self):
-        return self.getName()
-
-    def provideTelemetry(self):
-        # Return empty data as default
-        return None
-
     def onExit(self, T, dt):
+        self.active = False
         for e in self.events:
             e.onExit(T, dt)
 
