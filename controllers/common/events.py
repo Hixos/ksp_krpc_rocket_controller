@@ -56,12 +56,14 @@ class AtApoapsisEvent(EventBase):
 
         self.apoapsis = None
         self.altitude = None
+        self.vertical_speed = None
 
     def onEntry(self, T, dt):
         self.T0 = T
 
         self.altitude = VesselStreams.Flight.meanAltitudeStream()
         self.apoapsis = VesselStreams.Orbit.apoapsisAltitudeStream()
+        self.vertical_speed = VesselStreams.Flight.verticalSpeed()
 
     def check(self, T, dt):
         if self.has_target:
@@ -70,7 +72,7 @@ class AtApoapsisEvent(EventBase):
             apo = self.apoapsis()
 
         if abs(apo - self.altitude())/self.apoapsis() < self.tolerance\
-                and T > self.T0 + self.start_after_seconds:
+                and T > self.T0 + self.start_after_seconds and self.vertical_speed() < 0:
             return self.next_state_id
 
         return StateMachine.NO_STATE
@@ -78,6 +80,7 @@ class AtApoapsisEvent(EventBase):
     def onExit(self, T, dt):
         self.altitude.remove()
         self.apoapsis.remove()
+        self.vertical_speed.remove()
 
 
 class LandingEvent(EventBase):

@@ -2,6 +2,7 @@ import krpc
 
 conn = krpc.connect(name="Rocket Controller")
 vessel = conn.space_center.active_vessel
+flight_info = vessel.flight(vessel.orbit.body.reference_frame)
 
 
 class Stream:
@@ -57,6 +58,10 @@ class VesselStreams:
         @staticmethod
         def meanAltitudeStream():
             return Stream.getStream('vessel.flight.mean_altitude', (getattr, vessel.flight(), 'mean_altitude'))
+
+        @staticmethod
+        def verticalSpeed():
+            return Stream.getStream('vessel.flight.vertical_speed', (getattr, flight_info, 'vertical_speed'))
 
     class Orbit:
         @staticmethod

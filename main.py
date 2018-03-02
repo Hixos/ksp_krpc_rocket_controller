@@ -33,10 +33,11 @@ class MainTelemetryProvider(TelemetryProviderInterface):
         self.mean_altitude = VesselStreams.Flight.meanAltitudeStream()
         self.surf_altitude = VesselStreams.Flight.surfaceAltitudeStream()
         self.apo_altitude = VesselStreams.Orbit.apoapsisAltitudeStream()
+        self.vert_speed = VesselStreams.Flight.verticalSpeed()
 
     def getTelemetry(self):
         return [game_dt, machine.getActiveState().getName(), self.surf_altitude(),
-                self.mean_altitude(), self.apo_altitude()]
+                self.mean_altitude(), self.apo_altitude(), self.vert_speed()]
 
     def describeTelemetry(self):
         return TelemetryDescriptionBuilder()\
@@ -45,12 +46,14 @@ class MainTelemetryProvider(TelemetryProviderInterface):
             .addData('surface_altitude', "Surface Altitude", 'm') \
             .addData('mean_altitude', "Mean Altitude", 'm') \
             .addData('apo_altitude', 'Apoapsis Altitude', 'm')\
+            .addData('vertical_speed', 'Vertical Speed', 'm/s')\
             .build()
 
     def close(self):
         self.mean_altitude.remove()
         self.apo_altitude.remove()
         self.surf_altitude.remove()
+        self.vert_speed.remove()
 
 main_provider = MainTelemetryProvider()
 tm_manager.registerProvider('main_telemetry', "Main Telemetry", main_provider)
